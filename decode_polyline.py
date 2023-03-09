@@ -6,9 +6,9 @@ import argparse
 
 
 # Author: Fabian Nunes
-# Script to decode an encoded polyline value to a set of coordinates for Google Maps
-# Requires the polyline module (Install with pip install polyline)
-# Example: python decode_polyline.py file.txt -html|-url|-kml
+# Script to decode an encoded polyline value to a set of coordinates and show the route in a HTML map or convert them to a KML file
+# Requires the polyline module (Install with pip install polyline) and folium (also PIP)
+# Example: python decode_polyline.py file.txt -t html|kml
 
 class Bcolors:
     OKBLUE = '\033[94m'
@@ -55,7 +55,7 @@ for line in lines:
     f.close()
     print(Bcolors.OKGREEN + "[Done ] Decoded polyline: " + line)
 
-    if TYPE == "-html":
+    if TYPE == "html":
         # Generate HTML file with the map and the route using Folium
         place_lat = []
         place_lon = []
@@ -94,7 +94,8 @@ for line in lines:
         # Save the map to an HTML file
         title = 'Garmin_Polyline_Map'
         m.save(title + '.html')
-    elif TYPE == "-kml":
+        print(Bcolors.OKGREEN + "[Done ] Generated HTML file with the coordinates" + Bcolors.ENDC)
+    elif TYPE == "kml":
         # Generate KML file with the coordinates
         print(Bcolors.OKBLUE + "[Info ] Generating KML file with the coordinates")
         kml = """
