@@ -1,8 +1,11 @@
 #!/usr/bin/python
+import sqlite3
 import sys
 import polyline
 import folium
 import argparse
+from geopy.geocoders import Nominatim
+import xlsxwriter
 
 
 # Author: Fabian Nunes
@@ -17,13 +20,51 @@ class Bcolors:
     ENDC = '\033[0m'
 
 
-parser = argparse.ArgumentParser(description='Decode an encoded polyline value to a set of coordinates and generate a map')
+parser = argparse.ArgumentParser(
+    description='Decode an encoded polyline value to a set of coordinates and generate a map')
 parser.add_argument('-f', '--file', help='File with the encoded polyline', required=True)
 parser.add_argument('-t', '--type', help='Type of output', required=True, choices=["html", "kml"])
 args = parser.parse_args()
 
 FILE = args.file
 TYPE = args.type
+
+conn = sqlite3.connect('coordinates.db')
+c = conn.cursor()
+
+def get_raw_fields(latitude, longitude):
+    geolocator = Nominatim(user_agent="address-retrieval")
+    location = geolocator.reverse(f"{latitude}, {longitude}")
+    if location:
+        raw_data = location.raw
+        store_raw_fields(latitude, longitude, raw_data["address"]["road"], raw_data["address"]["city"],
+                         raw_data["address"]["postcode"], raw_data["address"]["country"])
+        return raw_data
+    else:
+        print("Location not found.")
+
+
+# Function to store the raw fields in a sqlite database if not already present, and create the database if not present
+def store_raw_fields(latitude, longitude, road, city, postcode, country):
+    # Check if the entry is already present
+    c.execute('''SELECT * FROM raw_fields WHERE latitude=? AND longitude=?''', (latitude, longitude))
+    if c.fetchone() is None:
+        # Insert a row of data
+        c.execute("INSERT INTO raw_fields VALUES (?, ?, ?, ?, ?, ?)",
+                  (latitude, longitude, road, city, postcode, country))
+        # Save (commit) the changes
+        conn.commit()
+
+
+# Function to check if the raw fields are already present in the database and return them if present or return None
+def check_raw_fields(latitude, longitude):
+
+    # Check if the entry is already present
+    c.execute('''SELECT * FROM raw_fields WHERE latitude=? AND longitude=?''', (latitude, longitude))
+    data = c.fetchone()
+    # convert to dict
+    return data
+
 
 try:
     f = open(FILE, 'r')
@@ -40,19 +81,60 @@ print(Bcolors.OKBLUE + "[Info ] Decoding polyline")
 for line in lines:
     line = line.strip()
     print(Bcolors.OKBLUE + "[Info ] Decoding polyline: " + line)
-    print(line)
-    coordinates = polyline.decode(line)
+    # print(line)
+    try:
+        coordinates = polyline.decode(line)
+    except:
+        print(Bcolors.FAIL + "Error decoding polyline" + Bcolors.ENDC)
+        sys.exit(1)
 
-    print(coordinates)
-    # Create a file with the coordinates
-    f = open("coordinates.txt", "w")
+    #print(coordinates)
+    # Create table if not present
+    c.execute(
+        '''CREATE TABLE IF NOT EXISTS raw_fields (latitude text, longitude text, road text, city text, postcode text, country text)''')
+    # Create an excel file with the coordinates
+    f = open("coordinates.xlsx", "w")
+    workbook = xlsxwriter.Workbook('coordinates.xlsx')
+    worksheet = workbook.add_worksheet()
+    row = 0
+    col = 0
+    worksheet.write(row, col, "Latitude")
+    worksheet.write(row, col + 1, "Longitude")
+    worksheet.write(row, col + 2, "Road")
+    worksheet.write(row, col + 3, "City")
+    worksheet.write(row, col + 4, "Postcode")
+    worksheet.write(row, col + 5, "Country")
+    row += 1
     for coordinate in coordinates:
         coordinate = str(coordinate)
         # remove the parenthesis
         coordinate = coordinate.replace("(", "")
         coordinate = coordinate.replace(")", "")
-        f.write(coordinate + "\n")
-    f.close()
+        coordinate = coordinate.split(",")
+        worksheet.write(row, col, coordinate[0])
+        worksheet.write(row, col + 1, coordinate[1])
+        location = check_raw_fields(coordinate[0], coordinate[1])
+        if location is None:
+            location = get_raw_fields(coordinate[0], coordinate[1])
+            for key, value in location.items():
+                if key == "address":
+                    for key, value in value.items():
+                        if key == "road":
+                            worksheet.write(row, col + 2, value)
+                        elif key == "city":
+                            worksheet.write(row, col + 3, value)
+                        elif key == "postcode":
+                            worksheet.write(row, col + 4, value)
+                        elif key == "country":
+                            worksheet.write(row, col + 5, value)
+        else:
+            worksheet.write(row, col + 2, location[2])
+            worksheet.write(row, col + 3, location[3])
+            worksheet.write(row, col + 4, location[4])
+            worksheet.write(row, col + 5, location[5])
+        row += 1
+    workbook.close()
+    conn.close()
     print(Bcolors.OKGREEN + "[Done ] Decoded polyline: " + line)
 
     if TYPE == "html":
@@ -137,10 +219,9 @@ for line in lines:
         kml = kml[1:]
         # remove last line
         kml = kml[:-1]
-        #remove extra indentation
+        # remove extra indentation
         kml = kml.replace("    ", "")
         f = open("map.kml", "w")
         f.write(kml)
         f.close()
         print(Bcolors.OKGREEN + "[Done ] Generated KML file with the coordinates" + Bcolors.ENDC)
-
