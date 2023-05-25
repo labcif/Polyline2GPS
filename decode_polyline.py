@@ -119,9 +119,9 @@ for line in lines:
             for key, value in location.items():
                 if key == "address":
                     for key, value in value.items():
-                        if key == "road":
+                        if key == "road" or key == "hamlet":
                             worksheet.write(row, col + 2, value)
-                        elif key == "city":
+                        elif key == "city" or key == "town":
                             worksheet.write(row, col + 3, value)
                         elif key == "postcode":
                             worksheet.write(row, col + 4, value)
