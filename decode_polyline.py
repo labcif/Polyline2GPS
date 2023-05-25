@@ -55,7 +55,9 @@ def get_raw_fields(latitude, longitude):
             city = 'Not present'
         store_raw_fields(latitude, longitude, road, city,
                          raw_data["address"]["postcode"], raw_data["address"]["country"])
-        return raw_data
+        #create a dict
+        obtained_data = {"road": road, "city": city, "postcode": raw_data["address"]["postcode"], "country": raw_data["address"]["country"]}
+        return obtained_data
     else:
         print("Location not found.")
 
@@ -132,16 +134,14 @@ for line in lines:
         if location is None:
             location = get_raw_fields(coordinate[0], coordinate[1])
             for key, value in location.items():
-                if key == "address":
-                    for key, value in value.items():
-                        if key == "road" or key == "hamlet":
-                            worksheet.write(row, col + 2, value)
-                        elif key == "city" or key == "town":
-                            worksheet.write(row, col + 3, value)
-                        elif key == "postcode":
-                            worksheet.write(row, col + 4, value)
-                        elif key == "country":
-                            worksheet.write(row, col + 5, value)
+                if key == "road":
+                    worksheet.write(row, col + 2, value)
+                elif key == "city":
+                    worksheet.write(row, col + 3, value)
+                elif key == "postcode":
+                    worksheet.write(row, col + 4, value)
+                elif key == "country":
+                    worksheet.write(row, col + 5, value)
         else:
             worksheet.write(row, col + 2, location[2])
             worksheet.write(row, col + 3, location[3])
