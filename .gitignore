@@ -131,7 +131,7 @@ dmypy.json
 .pyre/
 
 #custom ignores
-.db
-.xlsx
-.html
-.txt
+*.db
+*.xlsx
+*.html
+*.txt
