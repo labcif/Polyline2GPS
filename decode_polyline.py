@@ -32,12 +32,28 @@ TYPE = args.type
 conn = sqlite3.connect('coordinates.db')
 c = conn.cursor()
 
+
 def get_raw_fields(latitude, longitude):
     geolocator = Nominatim(user_agent="address-retrieval")
     location = geolocator.reverse(f"{latitude}, {longitude}")
     if location:
         raw_data = location.raw
-        store_raw_fields(latitude, longitude, raw_data["address"]["road"], raw_data["address"]["city"],
+        #check if raw_data["address"]["road"] exists
+
+        if "road" in raw_data["address"]:
+            road = raw_data["address"]["road"]
+        elif "hamlet" in raw_data["address"]:
+            road = raw_data["address"]["hamlet"]
+        else:
+            road = 'Not Present'
+
+        if "city" in raw_data["address"]:
+            city = raw_data["address"]["city"]
+        elif "town" in raw_data["address"]:
+            city = raw_data["address"]["town"]
+        else:
+            city = 'Not present'
+        store_raw_fields(latitude, longitude, road, city,
                          raw_data["address"]["postcode"], raw_data["address"]["country"])
         return raw_data
     else:
@@ -58,7 +74,6 @@ def store_raw_fields(latitude, longitude, road, city, postcode, country):
 
 # Function to check if the raw fields are already present in the database and return them if present or return None
 def check_raw_fields(latitude, longitude):
-
     # Check if the entry is already present
     c.execute('''SELECT * FROM raw_fields WHERE latitude=? AND longitude=?''', (latitude, longitude))
     data = c.fetchone()
@@ -88,7 +103,7 @@ for line in lines:
         print(Bcolors.FAIL + "Error decoding polyline" + Bcolors.ENDC)
         sys.exit(1)
 
-    #print(coordinates)
+    # print(coordinates)
     # Create table if not present
     c.execute(
         '''CREATE TABLE IF NOT EXISTS raw_fields (latitude text, longitude text, road text, city text, postcode text, country text)''')
