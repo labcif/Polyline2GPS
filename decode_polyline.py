@@ -63,13 +63,15 @@ def get_raw_fields(latitude, longitude):
 
 
 # Function to store the raw fields in a sqlite database if not already present, and create the database if not present
-def store_raw_fields(latitude, longitude, road, city, postcode, country):
+def store_raw_fields(latitude_value, longitude_value, road_value, city_value, postcode_value, country_value):
     # Check if the entry is already present
-    c.execute('''SELECT * FROM raw_fields WHERE latitude=? AND longitude=?''', (latitude, longitude))
+    c.execute('''SELECT * FROM raw_fields WHERE latitude=? AND longitude=?''', (latitude_value, longitude_value))
     if c.fetchone() is None:
         # Insert a row of data
-        c.execute("INSERT INTO raw_fields VALUES (?, ?, ?, ?, ?, ?)",
-                  (latitude, longitude, road, city, postcode, country))
+        c.execute('''INSERT INTO raw_fields (latitude, longitude, road, city, postcode, country) 
+                      VALUES (?, ?, ?, ?, ?, ?)''',
+                  (latitude_value, longitude_value, road_value, city_value, postcode_value, country_value))
+
         # Save (commit) the changes
         conn.commit()
 
@@ -108,7 +110,8 @@ for line in lines:
     # print(coordinates)
     # Create table if not present
     c.execute(
-        '''CREATE TABLE IF NOT EXISTS raw_fields (latitude text, longitude text, road text, city text, postcode text, country text)''')
+        '''CREATE TABLE IF NOT EXISTS raw_fields (id INTEGER PRIMARY KEY AUTOINCREMENT, stored_time TIMESTAMP DATETIME DEFAULT 
+        CURRENT_TIMESTAMP, latitude text, longitude text, road text, city text, postcode text, country text)''')
     # Create an excel file with the coordinates
     f = open("coordinates.xlsx", "w")
     workbook = xlsxwriter.Workbook('coordinates.xlsx')
