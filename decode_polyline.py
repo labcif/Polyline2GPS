@@ -39,13 +39,14 @@ def get_raw_fields(latitude, longitude):
     if location:
         raw_data = location.raw
         #check if raw_data["address"]["road"] exists
-
+        not_present = False
         if "road" in raw_data["address"]:
             road = raw_data["address"]["road"]
         elif "hamlet" in raw_data["address"]:
             road = raw_data["address"]["hamlet"]
         else:
             road = 'Not Present'
+            not_present = True
 
         if "city" in raw_data["address"]:
             city = raw_data["address"]["city"]
@@ -53,8 +54,11 @@ def get_raw_fields(latitude, longitude):
             city = raw_data["address"]["town"]
         else:
             city = 'Not present'
-        store_raw_fields(latitude, longitude, road, city,
-                         raw_data["address"]["postcode"], raw_data["address"]["country"])
+            not_present = True
+
+        if not not_present:
+            store_raw_fields(latitude, longitude, road, city,
+                             raw_data["address"]["postcode"], raw_data["address"]["country"])
         #create a dict
         obtained_data = {"road": road, "city": city, "postcode": raw_data["address"]["postcode"], "country": raw_data["address"]["country"]}
         return obtained_data
