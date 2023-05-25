@@ -150,10 +150,10 @@ for line in lines:
                 elif key == "country":
                     worksheet.write(row, col + 5, value)
         else:
-            worksheet.write(row, col + 2, location[2])
-            worksheet.write(row, col + 3, location[3])
-            worksheet.write(row, col + 4, location[4])
-            worksheet.write(row, col + 5, location[5])
+            worksheet.write(row, col + 3, location[4])
+            worksheet.write(row, col + 4, location[5])
+            worksheet.write(row, col + 5, location[6])
+            worksheet.write(row, col + 6, location[7])
         row += 1
     workbook.close()
     conn.close()
