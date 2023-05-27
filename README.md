@@ -1,10 +1,10 @@
-# Decode_Polyline
+# Polyline2GPS
 
 Repository for script to decode Google Polylines to coordinates and store them in a file and generate a map with the coordinates
 
 ## Requirements
  - Python 3
- - Python libraries: polyline, folium, argparse
+ - Python libraries: polyline, folium, argparse, geopy. xlsxwriter, pyfiglet
 
 ## How it works
 
@@ -24,12 +24,15 @@ After that, the script creates a map with the coordinates using the folium libra
 ## Usage
 
 ```bash
-python3 decode_polyline.py -f <file> -t <type>
+python3 polyline2gps.py -f <file> -t <type>
 ```
 
 ## Output
 
-The script will create a file called coordinates.txt with the coordinates and a map called map.html or a Google Earth file called map.kml.
+The script will create a file called a xlsx file with the coordinates and a map with the coordinates. The xlsx file will contain the coordinates and additional information
+such as the road, city, postcode and country using the geopy library. To improve speed and prevent blocking the script will save the coordinates in an SQLite database and 
+only use the geopy library if the coordinates are not in the database. The map will be created using the folium library and will be saved as an html file.
+Or the script will create a KML file with the coordinates to use in Google Earth.
 
 ## License
 
